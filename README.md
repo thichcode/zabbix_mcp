@@ -1,111 +1,242 @@
 # Zabbix MCP Server
 
-Zabbix MCP Server là một dịch vụ trung gian sử dụng Model Context Protocol để phân tích và tự động xử lý sự kiện Zabbix bằng AI.
+Middleware service sử dụng Model Context Protocol để phân tích và tự động hóa các sự kiện Zabbix với AI.
 
-## Cấu trúc dự án
+## Tính năng
 
-```
-zabbixmcp/
-├── app/
-│   ├── api/            # API endpoints
-│   ├── core/           # Core logic
-│   ├── models/         # Data models
-│   └── services/       # Business services
-├── config/             # Configuration files
-├── scripts/            # Utility scripts
-└── tests/              # Test files
-```
+- Phân tích sự kiện Zabbix bằng AI (OpenAI/Ollama)
+- Tự động hóa phản hồi sự cố
+- Tích hợp với n8n cho workflow automation
+- Caching và Rate Limiting
+- Health Check System
+- Logging System
+- Unit Tests
+- API Documentation
+
+## Yêu cầu hệ thống
+
+### Cài đặt bằng Docker
+- Docker 20.10+
+- Docker Compose 2.0+
+- 4GB RAM trở lên
+- 20GB ổ cứng trống
 
 ## Cài đặt
 
-1. Tạo môi trường ảo:
+### Cài đặt bằng Docker (Khuyến nghị)
+
+1. Clone repository:
+```bash
+git clone https://github.com/thichcode/zabbix_mcp.git
+cd zabbix_mcp
+```
+
+2. Cấu hình môi trường:
+```bash
+cp .env.example .env
+# Chỉnh sửa file .env với cấu hình của bạn
+```
+
+3. Build và chạy containers:
+```bash
+docker-compose up -d
+```
+
+4. Kiểm tra logs:
+```bash
+docker-compose logs -f app
+```
+
+5. Kiểm tra health:
+```bash
+curl http://localhost:8000/api/v1/health
+```
+
+### Cài đặt thủ công
+
+1. Clone repository:
+```bash
+git clone https://github.com/thichcode/zabbix_mcp.git
+cd zabbix_mcp
+```
+
+2. Tạo và kích hoạt môi trường ảo:
 ```bash
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
-.\venv\Scripts\activate   # Windows
+venv\Scripts\activate     # Windows
 ```
 
-2. Cài đặt dependencies:
+3. Cài đặt dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Cấu hình biến môi trường:
-- Tạo file `.env` từ mẫu dưới đây
-- Điền các thông tin cấu hình cần thiết
-
-### Mẫu file .env
-```env
-# MongoDB Configuration
-MONGODB_URI=mongodb://localhost:27017
-MONGODB_DB=zabbixmcp
-
-# OpenAI Configuration (Sử dụng khi USE_OLLAMA=false)
-OPENAI_API_KEY=your_openai_api_key
-OPENAI_MODEL=gpt-4-turbo-preview
-
-# Ollama Configuration (Sử dụng khi USE_OLLAMA=true)
-USE_OLLAMA=false
-OLLAMA_API_URL=http://localhost:11434
-OLLAMA_MODEL=llama2
-
-# Server Configuration
-HOST=0.0.0.0
-PORT=8000
-DEBUG=True
-
-# Zabbix Configuration
-ZABBIX_API_URL=http://localhost/zabbix/api_jsonrpc.php
-ZABBIX_USER=Admin
-ZABBIX_PASSWORD=zabbix
-
-# n8n Configuration
-N8N_WEBHOOK_URL=http://localhost:5678/webhook/zabbix
+4. Cấu hình môi trường:
+```bash
+cp .env.example .env
+# Chỉnh sửa file .env với cấu hình của bạn
 ```
 
-## Chạy server
+5. Cài đặt và cấu hình MongoDB:
+```bash
+# Ubuntu/Debian
+sudo apt-get install mongodb
+sudo systemctl start mongodb
 
+# Windows
+# Tải và cài đặt từ https://www.mongodb.com/try/download/community
+```
+
+6. Cài đặt và cấu hình Redis:
+```bash
+# Ubuntu/Debian
+sudo apt-get install redis-server
+sudo systemctl start redis-server
+
+# Windows
+# Tải từ https://github.com/microsoftarchive/redis/releases
+```
+
+7. Cấu hình Zabbix:
+```bash
+# Chạy script cấu hình
+python scripts/setup_zabbix.py
+```
+
+## Chạy ứng dụng
+
+### Docker
+```bash
+# Khởi động
+docker-compose up -d
+
+# Dừng
+docker-compose down
+
+# Xem logs
+docker-compose logs -f app
+
+# Restart
+docker-compose restart app
+```
+
+### Thủ công
+1. Chạy tests:
+```bash
+pytest tests/
+```
+
+2. Chạy server:
 ```bash
 uvicorn app.main:app --reload
 ```
 
+3. Kiểm tra health:
+```bash
+curl http://localhost:8000/api/v1/health
+```
+
+4. Xem logs:
+```bash
+tail -f logs/api_*.log
+```
+
+## Cấu hình Docker
+
+### Volumes
+- `mongodb_data`: Lưu trữ dữ liệu MongoDB
+- `redis_data`: Lưu trữ dữ liệu Redis
+- `ollama_data`: Lưu trữ models Ollama
+- `./logs`: Log files
+- `./.env`: Environment variables
+
+### Networks
+- `zabbix_network`: Network cho các services
+
+### Ports
+- `8000`: API server
+- `27017`: MongoDB
+- `6379`: Redis
+- `11434`: Ollama (tùy chọn)
+
 ## API Endpoints
 
-- POST `/api/v1/webhook/zabbix`: Webhook endpoint cho Zabbix
-- GET `/api/v1/events`: Lấy danh sách sự kiện
-- GET `/api/v1/events/{event_id}`: Lấy chi tiết sự kiện
-- POST `/api/v1/events/{event_id}/analyze`: Phân tích sự kiện bằng AI
+- `GET /api/v1/health`: Kiểm tra trạng thái hệ thống
+- `POST /api/v1/webhook`: Webhook endpoint cho Zabbix
+- `GET /docs`: API documentation (Swagger UI)
 
-## Tích hợp
+## Cấu trúc dự án
 
-### Zabbix
-1. Cấu hình External Script trong Zabbix để gửi alert tới webhook
-2. Cấu hình n8n để xử lý các hành động tự động
-
-### MongoDB
-- Lưu trữ lịch sử RCA và các phân tích
-- Tra cứu các sự kiện tương tự
-
-### OpenAI/Ollama
-- Phân tích nguyên nhân gốc rễ (RCA)
-- Tạo báo cáo tự động
-
-## Cấu hình AI Model
-
-### Sử dụng OpenAI
-1. Đặt `USE_OLLAMA=false` trong file `.env`
-2. Cung cấp `OPENAI_API_KEY` hợp lệ
-3. Chọn model phù hợp trong `OPENAI_MODEL`
-
-### Sử dụng Ollama (Local)
-1. Cài đặt Ollama từ https://ollama.ai/
-2. Tải model mong muốn:
-```bash
-ollama pull llama2  # hoặc model khác
 ```
-3. Đặt `USE_OLLAMA=true` trong file `.env`
-4. Cấu hình `OLLAMA_API_URL` và `OLLAMA_MODEL`
-5. Khởi động Ollama server:
+zabbix_mcp/
+├── app/
+│   ├── api/
+│   │   ├── webhook.py
+│   │   └── health.py
+│   ├── core/
+│   │   └── logging.py
+│   ├── models/
+│   │   └── event.py
+│   ├── services/
+│   │   ├── analysis.py
+│   │   ├── auth_service.py
+│   │   ├── cache_service.py
+│   │   ├── database.py
+│   │   ├── deep_research.py
+│   │   └── ollama_service.py
+│   └── main.py
+├── tests/
+│   └── test_analysis.py
+├── scripts/
+│   └── setup_zabbix.py
+├── logs/
+├── .env.example
+├── .gitignore
+├── Dockerfile
+├── docker-compose.yml
+├── README.md
+└── requirements.txt
+```
+
+## Monitoring
+
+- Health Check: `/api/v1/health`
+- Logs: `logs/` directory hoặc `docker-compose logs`
+- Metrics: Prometheus metrics (coming soon)
+
+## Development
+
+1. Cài đặt development dependencies:
 ```bash
-ollama serve
-``` 
+pip install -r requirements-dev.txt
+```
+
+2. Chạy code formatting:
+```bash
+black .
+isort .
+```
+
+3. Chạy linting:
+```bash
+flake8
+mypy .
+```
+
+4. Chạy tests với coverage:
+```bash
+pytest --cov=app tests/
+```
+
+## Contributing
+
+1. Fork repository
+2. Tạo branch mới
+3. Commit changes
+4. Push lên branch
+5. Tạo Pull Request
+
+## License
+
+MIT License 

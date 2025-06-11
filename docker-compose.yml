@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./.env:/app/.env
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+      - REDIS_HOST=redis
+    networks:
+      - zabbix_network
+
+  mongodb:
+    image: mongo:4.4
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - zabbix_network
+
+  redis:
+    image: redis:6.0
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - zabbix_network
+
+  # Ollama service (tùy chọn)
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - zabbix_network
+
+volumes:
+  mongodb_data:
+  redis_data:
+  ollama_data:
+
+networks:
+  zabbix_network:
+    driver: bridge 
