@@ -7,6 +7,8 @@ from .database import DatabaseService
 from .ollama_service import OllamaService
 from .rag_service import RAGService
 from .deep_research import DeepResearchService
+from .trend_analysis import TrendAnalysisService
+from .impact_analysis import ImpactAnalysisService
 
 class EventAnalysisService:
     def __init__(self, openai_api_key: str = None, model: str = "gpt-4-turbo-preview", use_ollama: bool = False):
@@ -14,6 +16,8 @@ class EventAnalysisService:
         self.db = DatabaseService()
         self.rag = RAGService(self.db)
         self.deep_research = DeepResearchService(self.db)
+        self.trend_analysis = TrendAnalysisService(self.db)
+        self.impact_analysis = ImpactAnalysisService(self.db)
         
         if use_ollama:
             self.ollama = OllamaService(
@@ -36,12 +40,28 @@ class EventAnalysisService:
         # Thực hiện phân tích sâu
         deep_research_results = await self.deep_research.research_event(event_dict, context)
         
+        # Phân tích xu hướng
+        trend_results = await self.trend_analysis.analyze_trends(
+            host=event.host,
+            trigger=event.trigger,
+            time_range=24  # Phân tích 24 giờ gần nhất
+        )
+        
+        # Phân tích tác động
+        impact_results = await self.impact_analysis.analyze_impact(event)
+        
         # Phân tích sự kiện
         if self.use_ollama:
             analysis = await self.ollama.analyze_event(event_dict, context)
         else:
             # Tạo prompt cho OpenAI với context từ RAG và kết quả phân tích sâu
-            prompt = self._create_analysis_prompt(event, context_text, deep_research_results)
+            prompt = self._create_analysis_prompt(
+                event, 
+                context_text, 
+                deep_research_results,
+                trend_results,
+                impact_results
+            )
             
             # Gọi OpenAI API
             response = await openai.ChatCompletion.acreate(
@@ -67,7 +87,10 @@ class EventAnalysisService:
                 "context_used": len(context),
                 "context_relevance_scores": [item["relevance_score"] for item in context],
                 "deep_research": deep_research_results
-            }
+            },
+            trend_analysis=trend_results,
+            impact_analysis=impact_results,
+            resolution_time=impact_results["temporal_impact"]["recovery_estimate"]["estimated_minutes"]
         )
         
         # Lưu kết quả phân tích vào database
@@ -75,7 +98,9 @@ class EventAnalysisService:
         
         return event_analysis
 
-    def _create_analysis_prompt(self, event: ZabbixEvent, context_text: str, deep_research: Dict[str, Any]) -> str:
+    def _create_analysis_prompt(self, event: ZabbixEvent, context_text: str, 
+                              deep_research: Dict[str, Any], trend_results: Dict[str, Any],
+                              impact_results: Dict[str, Any]) -> str:
         # Định dạng kết quả phân tích sâu
         deep_research_text = "\nDeep Research Results:\n"
         
@@ -108,6 +133,21 @@ class EventAnalysisService:
                 deep_research_text += f"- [{rec['priority']}] {rec['description']}\n"
                 deep_research_text += f"  Action: {rec['action']}\n"
 
+        # Định dạng kết quả phân tích xu hướng
+        trend_text = "\nTrend Analysis:\n"
+        if trend_results["has_trend"]:
+            trend_text += f"- Frequency: {trend_results['frequency_analysis']['trend']}\n"
+            trend_text += f"- Severity Trend: {trend_results['severity_analysis']['trend']}\n"
+            if trend_results['recovery_analysis']['has_recovery_data']:
+                trend_text += f"- Average Recovery Time: {trend_results['recovery_analysis']['average_recovery_time']:.2f} minutes\n"
+
+        # Định dạng kết quả phân tích tác động
+        impact_text = "\nImpact Analysis:\n"
+        impact_text += f"- Direct Impact: {impact_results['direct_impact']['impact_type']}\n"
+        impact_text += f"- Affected Services: {len(impact_results['indirect_impact']['affected_services'])}\n"
+        impact_text += f"- Business Hours Impact: {impact_results['temporal_impact']['timing']['is_business_hours']}\n"
+        impact_text += f"- Estimated Cost: ${impact_results['indirect_impact']['business_impact']['estimated_cost']:.2f}\n"
+
         return f"""
         Analyze the following Zabbix event and provide:
         1. Root Cause Analysis (RCA)
@@ -129,12 +169,18 @@ class EventAnalysisService:
 
         {deep_research_text}
 
-        Please use both the historical context and deep research results above to provide a comprehensive analysis.
+        {trend_text}
+
+        {impact_text}
+
+        Please use all the analysis results above to provide a comprehensive analysis.
         Consider:
         1. Any recurring patterns or issues
         2. System health and stability metrics
         3. Dependencies and impact chains
         4. Specific recommendations based on the analysis
+        5. Business impact and cost implications
+        6. Recovery time estimates
 
         If you find similar events, explain how they relate to the current event.
         If you find successful resolutions in the history, include them in your recommendations.

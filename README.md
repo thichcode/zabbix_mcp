@@ -1,241 +1,192 @@
 # Zabbix MCP Server
 
-Middleware service sử dụng Model Context Protocol để phân tích và tự động hóa các sự kiện Zabbix với AI.
+MCP (Monitoring Control Panel) Server là một hệ thống phân tích thông minh cho Zabbix, giúp tự động phân tích và xử lý các trigger từ Zabbix.
 
-## Tính năng
+## Tính năng chính
 
-- Phân tích sự kiện Zabbix bằng AI (OpenAI/Ollama)
-- Tự động hóa phản hồi sự cố
-- Tích hợp với n8n cho workflow automation
-- Caching và Rate Limiting
-- Health Check System
-- Logging System
-- Unit Tests
-- API Documentation
+### 1. Phân tích Trigger
+- Phân tích nguyên nhân gốc rễ (RCA)
+- Phân tích xu hướng và mẫu
+- Phân tích tác động và ảnh hưởng
+- Đề xuất giải pháp tự động
 
-## Yêu cầu hệ thống
+### 2. Phân tích Xu hướng
+- Phân tích tần suất xuất hiện của trigger
+- Phân tích mức độ nghiêm trọng theo thời gian
+- Phân tích thời gian phục hồi
+- Dự đoán xu hướng trong tương lai
 
-### Cài đặt bằng Docker
-- Docker 20.10+
-- Docker Compose 2.0+
-- 4GB RAM trở lên
-- 20GB ổ cứng trống
+### 3. Phân tích Tác động
+- Phân tích tác động trực tiếp
+- Phân tích tác động gián tiếp
+- Phân tích tác động theo thời gian
+- Ước tính chi phí kinh doanh
+
+### 4. Bảo mật
+- Xác thực API key
+- Rate limiting (60 request/phút)
+- Logging chi tiết
+- Kiểm tra sức khỏe hệ thống
 
 ## Cài đặt
 
-### Cài đặt bằng Docker (Khuyến nghị)
+### Yêu cầu
+- Python 3.8+
+- MongoDB 4.4+
+- Redis 6.0+
+- Zabbix 5.0+
 
-1. Clone repository:
-```bash
-git clone https://github.com/thichcode/zabbix_mcp.git
-cd zabbix_mcp
-```
-
-2. Cấu hình môi trường:
-```bash
-cp .env.example .env
-# Chỉnh sửa file .env với cấu hình của bạn
-```
-
-3. Build và chạy containers:
-```bash
-docker-compose up -d
-```
-
-4. Kiểm tra logs:
-```bash
-docker-compose logs -f app
-```
-
-5. Kiểm tra health:
-```bash
-curl http://localhost:8000/api/v1/health
-```
-
-### Cài đặt thủ công
-
-1. Clone repository:
-```bash
-git clone https://github.com/thichcode/zabbix_mcp.git
-cd zabbix_mcp
-```
-
-2. Tạo và kích hoạt môi trường ảo:
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
-```
-
-3. Cài đặt dependencies:
+### Cài đặt dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Cấu hình môi trường:
-```bash
-cp .env.example .env
-# Chỉnh sửa file .env với cấu hình của bạn
+### Cấu hình
+1. Tạo file `.env` với các biến môi trường:
+```env
+MONGODB_URI=mongodb://localhost:27017
+MONGODB_DB=zabbix_mcp
+REDIS_HOST=localhost
+REDIS_PORT=6379
+ZABBIX_API_URL=http://your-zabbix-server/api_jsonrpc.php
+ZABBIX_USER=Admin
+ZABBIX_PASSWORD=zabbix
+ZABBIX_WEBHOOK_API_KEY=your-secret-key
+OPENAI_API_KEY=your-openai-key
+USE_OLLAMA=false
+OLLAMA_API_URL=http://localhost:11434
+OLLAMA_MODEL=llama2
 ```
 
-5. Cài đặt và cấu hình MongoDB:
+2. Cấu hình Zabbix webhook:
 ```bash
-# Ubuntu/Debian
-sudo apt-get install mongodb
-sudo systemctl start mongodb
-
-# Windows
-# Tải và cài đặt từ https://www.mongodb.com/try/download/community
-```
-
-6. Cài đặt và cấu hình Redis:
-```bash
-# Ubuntu/Debian
-sudo apt-get install redis-server
-sudo systemctl start redis-server
-
-# Windows
-# Tải từ https://github.com/microsoftarchive/redis/releases
-```
-
-7. Cấu hình Zabbix:
-```bash
-# Chạy script cấu hình
 python scripts/setup_zabbix.py
 ```
 
-## Chạy ứng dụng
-
-### Docker
+### Chạy với Docker
 ```bash
-# Khởi động
 docker-compose up -d
-
-# Dừng
-docker-compose down
-
-# Xem logs
-docker-compose logs -f app
-
-# Restart
-docker-compose restart app
 ```
-
-### Thủ công
-1. Chạy tests:
-```bash
-pytest tests/
-```
-
-2. Chạy server:
-```bash
-uvicorn app.main:app --reload
-```
-
-3. Kiểm tra health:
-```bash
-curl http://localhost:8000/api/v1/health
-```
-
-4. Xem logs:
-```bash
-tail -f logs/api_*.log
-```
-
-## Cấu hình Docker
-
-### Volumes
-- `mongodb_data`: Lưu trữ dữ liệu MongoDB
-- `redis_data`: Lưu trữ dữ liệu Redis
-- `ollama_data`: Lưu trữ models Ollama
-- `./logs`: Log files
-- `./.env`: Environment variables
-
-### Networks
-- `zabbix_network`: Network cho các services
-
-### Ports
-- `8000`: API server
-- `27017`: MongoDB
-- `6379`: Redis
-- `11434`: Ollama (tùy chọn)
 
 ## API Endpoints
 
-- `GET /api/v1/health`: Kiểm tra trạng thái hệ thống
-- `POST /api/v1/webhook`: Webhook endpoint cho Zabbix
-- `GET /docs`: API documentation (Swagger UI)
+### Webhook
+```
+POST /api/v1/webhook/zabbix
+```
+Nhận trigger từ Zabbix và phân tích.
+
+Headers:
+- `X-API-Key`: API key để xác thực
+
+Body:
+```json
+{
+    "event": {
+        "event_id": "string",
+        "host": "string",
+        "item": "string",
+        "trigger": "string",
+        "severity": "integer",
+        "status": "string",
+        "timestamp": "datetime",
+        "value": "string",
+        "description": "string",
+        "tags": []
+    },
+    "action": "string"
+}
+```
+
+### Health Check
+```
+GET /api/v1/health
+```
+Kiểm tra trạng thái của các service.
 
 ## Cấu trúc dự án
 
 ```
-zabbix_mcp/
+zabbixmcp/
 ├── app/
 │   ├── api/
 │   │   ├── webhook.py
 │   │   └── health.py
-│   ├── core/
-│   │   └── logging.py
 │   ├── models/
 │   │   └── event.py
 │   ├── services/
 │   │   ├── analysis.py
-│   │   ├── auth_service.py
-│   │   ├── cache_service.py
 │   │   ├── database.py
+│   │   ├── trend_analysis.py
+│   │   ├── impact_analysis.py
 │   │   ├── deep_research.py
+│   │   ├── rag_service.py
 │   │   └── ollama_service.py
-│   └── main.py
-├── tests/
-│   └── test_analysis.py
+│   └── core/
+│       └── logging.py
+├── config/
 ├── scripts/
 │   └── setup_zabbix.py
-├── logs/
-├── .env.example
-├── .gitignore
-├── Dockerfile
+├── tests/
 ├── docker-compose.yml
-├── README.md
-└── requirements.txt
+├── Dockerfile
+├── requirements.txt
+└── README.md
 ```
+
+## Phân tích
+
+### Phân tích Xu hướng
+- Tần suất xuất hiện của trigger
+- Mức độ nghiêm trọng theo thời gian
+- Thời gian phục hồi trung bình
+- Dự đoán xu hướng
+
+### Phân tích Tác động
+- Tác động trực tiếp
+  - Mức độ nghiêm trọng
+  - Host bị ảnh hưởng
+  - Item bị ảnh hưởng
+  - Hành động cần thiết
+- Tác động gián tiếp
+  - Service bị ảnh hưởng
+  - User bị ảnh hưởng
+  - Hiệu ứng dây chuyền
+  - Tác động kinh doanh
+- Tác động theo thời gian
+  - Thời điểm xảy ra
+  - Thời gian phục hồi
+  - Mẫu lịch sử
+
+## Bảo mật
+
+### Xác thực
+- API key bắt buộc cho webhook
+- Kiểm tra IP nguồn
+- Rate limiting
+
+### Logging
+- Log tất cả request
+- Log kết quả phân tích
+- Log lỗi và cảnh báo
 
 ## Monitoring
 
-- Health Check: `/api/v1/health`
-- Logs: `logs/` directory hoặc `docker-compose logs`
-- Metrics: Prometheus metrics (coming soon)
+### Health Check
+- Kiểm tra MongoDB
+- Kiểm tra Redis
+- Kiểm tra Zabbix API
+- Kiểm tra AI service
 
-## Development
-
-1. Cài đặt development dependencies:
-```bash
-pip install -r requirements-dev.txt
-```
-
-2. Chạy code formatting:
-```bash
-black .
-isort .
-```
-
-3. Chạy linting:
-```bash
-flake8
-mypy .
-```
-
-4. Chạy tests với coverage:
-```bash
-pytest --cov=app tests/
-```
+### Metrics
+- Số lượng trigger
+- Thời gian phân tích
+- Độ chính xác của phân tích
+- Tỷ lệ phục hồi
 
 ## Contributing
 
-1. Fork repository
-2. Tạo branch mới
-3. Commit changes
-4. Push lên branch
-5. Tạo Pull Request
+Xem [CONTRIBUTING.md](CONTRIBUTING.md) để biết thêm chi tiết.
 
 ## License
 
