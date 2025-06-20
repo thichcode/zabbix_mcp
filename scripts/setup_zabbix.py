@@ -78,15 +78,15 @@ def create_webhook_action(auth_token, media_type_id):
 
 def main():
     try:
-        # Lấy token xác thực
+        # Get authentication token
         auth_token = get_auth_token()
         print("Authentication successful")
         
-        # Tạo media type cho webhook
+        # Create media type for webhook
         media_type_id = create_webhook_media_type(auth_token)
         print(f"Created webhook media type with ID: {media_type_id}")
         
-        # Tạo action cho webhook
+        # Create action for webhook
         action_id = create_webhook_action(auth_token, media_type_id)
         print(f"Created webhook action with ID: {action_id}")
         

@@ -13,7 +13,7 @@ cache = CacheService()
 
 @router.get("/health")
 async def health_check() -> Dict[str, Any]:
-    """Kiểm tra trạng thái tổng thể của hệ thống"""
+    """Check the overall health of the system"""
     try:
         # Kiểm tra MongoDB
         mongo_status = await check_mongodb()
@@ -52,7 +52,7 @@ async def health_check() -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 async def check_mongodb() -> Dict[str, Any]:
-    """Kiểm tra kết nối MongoDB"""
+    """Check MongoDB connection"""
     try:
         await db.ping()
         return {
@@ -67,7 +67,7 @@ async def check_mongodb() -> Dict[str, Any]:
         }
 
 async def check_redis() -> Dict[str, Any]:
-    """Kiểm tra kết nối Redis"""
+    """Check Redis connection"""
     try:
         await cache.redis_client.ping()
         return {
@@ -82,7 +82,7 @@ async def check_redis() -> Dict[str, Any]:
         }
 
 async def check_zabbix() -> Dict[str, Any]:
-    """Kiểm tra kết nối Zabbix API"""
+    """Check Zabbix API connection"""
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(os.getenv("ZABBIX_API_URL")) as response:
@@ -104,7 +104,7 @@ async def check_zabbix() -> Dict[str, Any]:
         }
 
 async def check_ai_service() -> Dict[str, Any]:
-    """Kiểm tra kết nối AI service (Ollama/OpenAI)"""
+    """Check AI service (Ollama/OpenAI) connection"""
     try:
         if os.getenv("USE_OLLAMA") == "true":
             # Kiểm tra Ollama

@@ -9,18 +9,18 @@ class ImpactAnalysisService:
 
     async def analyze_impact(self, event: ZabbixEvent) -> Dict[str, Any]:
         """
-        Phân tích tác động của một trigger
+        Analyze the impact of a trigger
         """
-        # Tìm các sự kiện liên quan
+        # Find related events
         related_events = await self._find_related_events(event)
         
-        # Phân tích tác động trực tiếp
+        # Analyze direct impact
         direct_impact = await self._analyze_direct_impact(event)
         
-        # Phân tích tác động gián tiếp
+        # Analyze indirect impact
         indirect_impact = await self._analyze_indirect_impact(event, related_events)
         
-        # Phân tích tác động theo thời gian
+        # Analyze temporal impact
         temporal_impact = await self._analyze_temporal_impact(event, related_events)
 
         return {
@@ -32,21 +32,21 @@ class ImpactAnalysisService:
         }
 
     async def _find_related_events(self, event: ZabbixEvent) -> List[Dict[str, Any]]:
-        """Tìm các sự kiện liên quan"""
-        # Tìm các sự kiện trên cùng host
+        """Find related events"""
+        # Find events on the same host
         host_events = await self.db.get_events_by_host(event.host)
         
-        # Tìm các sự kiện có cùng trigger pattern
+        # Find events with the same trigger pattern
         similar_triggers = await self.db.find_similar_triggers(event.trigger)
         
-        # Kết hợp và loại bỏ trùng lặp
+        # Combine and remove duplicates
         all_events = host_events + similar_triggers
         unique_events = {e["event_id"]: e for e in all_events}.values()
         
         return list(unique_events)
 
     async def _analyze_direct_impact(self, event: ZabbixEvent) -> Dict[str, Any]:
-        """Phân tích tác động trực tiếp"""
+        """Analyze direct impact"""
         return {
             "severity_level": event.severity,
             "affected_host": event.host,
@@ -56,16 +56,16 @@ class ImpactAnalysisService:
         }
 
     async def _analyze_indirect_impact(self, event: ZabbixEvent, related_events: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Phân tích tác động gián tiếp"""
+        """Analyze indirect impact"""
         affected_services = set()
         affected_users = set()
         
         for related_event in related_events:
-            # Phân tích các service bị ảnh hưởng
+            # Analyze affected services
             if "service" in related_event.get("tags", []):
                 affected_services.add(related_event["tags"]["service"])
             
-            # Phân tích các user bị ảnh hưởng
+            # Analyze affected users
             if "user_impact" in related_event.get("tags", []):
                 affected_users.add(related_event["tags"]["user_impact"])
 
@@ -77,13 +77,13 @@ class ImpactAnalysisService:
         }
 
     async def _analyze_temporal_impact(self, event: ZabbixEvent, related_events: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Phân tích tác động theo thời gian"""
-        # Phân tích thời gian xảy ra sự kiện
+        """Analyze temporal impact"""
+        # Analyze event occurrence time
         event_time = event.timestamp
         hour = event_time.hour
         day = event_time.weekday()
         
-        # Xác định thời điểm tác động
+        # Determine impact time
         impact_timing = {
             "is_business_hours": 9 <= hour <= 17 and day < 5,
             "is_peak_hours": self._is_peak_hours(hour, day),
@@ -97,7 +97,7 @@ class ImpactAnalysisService:
         }
 
     def _determine_impact_type(self, event: ZabbixEvent) -> str:
-        """Xác định loại tác động"""
+        """Determine impact type"""
         if event.severity >= 4:
             return "CRITICAL"
         elif event.severity >= 3:
@@ -107,7 +107,7 @@ class ImpactAnalysisService:
         return "LOW"
 
     def _get_required_actions(self, event: ZabbixEvent) -> List[str]:
-        """Xác định các hành động cần thiết"""
+        """Determine necessary actions"""
         actions = []
         if event.severity >= 4:
             actions.extend(["IMMEDIATE_INVESTIGATION", "NOTIFY_TEAM"])
@@ -116,7 +116,7 @@ class ImpactAnalysisService:
         return actions
 
     def _analyze_cascade_effect(self, event: ZabbixEvent, related_events: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Phân tích hiệu ứng dây chuyền"""
+        """Analyze cascade effect"""
         cascade_chain = []
         for related in related_events:
             if related["timestamp"] > event.timestamp:
@@ -133,7 +133,7 @@ class ImpactAnalysisService:
         }
 
     def _assess_business_impact(self, event: ZabbixEvent, affected_services: List[str]) -> Dict[str, Any]:
-        """Đánh giá tác động kinh doanh"""
+        """Assess business impact"""
         return {
             "affected_services_count": len(affected_services),
             "business_critical": any(service in ["core", "payment", "auth"] for service in affected_services),
@@ -141,24 +141,24 @@ class ImpactAnalysisService:
         }
 
     def _is_peak_hours(self, hour: int, day: int) -> bool:
-        """Kiểm tra có phải giờ cao điểm không"""
+        """Check if it's peak hours"""
         if day < 5:  # Weekday
             return (10 <= hour <= 12) or (14 <= hour <= 16)
         return False
 
     def _estimate_impact_duration(self, event: ZabbixEvent, related_events: List[Dict[str, Any]]) -> float:
-        """Ước tính thời gian tác động"""
+        """Estimate impact duration"""
         if not related_events:
             return 0.0
         
-        # Tìm sự kiện OK tiếp theo
+        # Find the next OK event
         ok_events = [e for e in related_events if e["status"] == "OK" and e["timestamp"] > event.timestamp]
         if ok_events:
             return (ok_events[0]["timestamp"] - event.timestamp).total_seconds() / 60
         return 0.0
 
     def _estimate_recovery_time(self, event: ZabbixEvent, related_events: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Ước tính thời gian phục hồi"""
+        """Estimate recovery time"""
         recovery_times = []
         for related in related_events:
             if related["status"] == "OK" and related["timestamp"] > event.timestamp:
@@ -172,18 +172,18 @@ class ImpactAnalysisService:
         
         return {
             "estimated_minutes": sum(recovery_times) / len(recovery_times),
-            "confidence": min(1.0, len(recovery_times) / 10)  # Càng nhiều dữ liệu càng tin cậy
+            "confidence": min(1.0, len(recovery_times) / 10)  # More data means more reliability
         }
 
     def _analyze_historical_pattern(self, event: ZabbixEvent, related_events: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Phân tích mẫu lịch sử"""
+        """Analyze historical pattern"""
         if not related_events:
             return {
                 "has_pattern": False,
                 "message": "Không đủ dữ liệu lịch sử"
             }
         
-        # Phân tích tần suất
+        # Analyze frequency
         frequency = len(related_events) / 30  # Số sự kiện mỗi tháng
         
         return {
@@ -194,7 +194,7 @@ class ImpactAnalysisService:
         }
 
     def _estimate_business_cost(self, event: ZabbixEvent, affected_services: List[str]) -> float:
-        """Ước tính chi phí kinh doanh"""
+        """Estimate business cost"""
         base_cost = 1000  # Chi phí cơ bản cho mỗi giờ downtime
         severity_multiplier = event.severity / 2
         service_multiplier = len(affected_services) * 0.5
@@ -204,20 +204,20 @@ class ImpactAnalysisService:
     def _calculate_impact_score(self, direct_impact: Dict[str, Any], 
                               indirect_impact: Dict[str, Any], 
                               temporal_impact: Dict[str, Any]) -> float:
-        """Tính toán điểm tác động tổng thể"""
-        # Trọng số cho các thành phần
+        """Calculate overall impact score"""
+        # Weights for components
         weights = {
             "direct": 0.4,
             "indirect": 0.3,
             "temporal": 0.3
         }
         
-        # Tính điểm cho từng thành phần
+        # Calculate score for each component
         direct_score = direct_impact["severity_level"] / 5
         indirect_score = len(indirect_impact["affected_services"]) / 10
         temporal_score = 1 if temporal_impact["timing"]["is_business_hours"] else 0.5
         
-        # Tính điểm tổng hợp
+        # Calculate composite score
         return (direct_score * weights["direct"] +
                 indirect_score * weights["indirect"] +
                 temporal_score * weights["temporal"]) 
