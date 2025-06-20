@@ -10,10 +10,10 @@ class OllamaService:
         self.api_url = f"{base_url}/api/generate"
 
     async def analyze_event(self, event: Dict[str, Any], context: List[Dict[str, Any]] = None) -> Dict[str, Any]:
-        # Tạo prompt cho Ollama
+        # Create prompt for Ollama
         prompt = self._create_analysis_prompt(event, context)
         
-        # Gọi Ollama API
+        # Call Ollama API
         response = requests.post(
             self.api_url,
             json={
@@ -28,7 +28,7 @@ class OllamaService:
             
         result = response.json()
         
-        # Phân tích kết quả
+        # Parse analysis result
         return self._parse_analysis_response(result["response"])
 
     def _create_analysis_prompt(self, event: Dict[str, Any], context: List[Dict[str, Any]] = None) -> str:
@@ -45,7 +45,7 @@ class OllamaService:
                     context_text += f"Value: {event_data['value']}\n"
                     context_text += f"Timestamp: {event_data['timestamp']}\n"
                     
-                    # Thêm phân tích tương ứng nếu có
+                    # Add corresponding analysis if available
                     for analysis_item in context:
                         if (analysis_item["type"] == "analysis" and 
                             analysis_item["data"]["event_id"] == event_data["event_id"]):
@@ -93,7 +93,7 @@ Please format your response as JSON with the following structure:
 
     def _parse_analysis_response(self, response: str) -> Dict[str, Any]:
         try:
-            # Tìm JSON trong response
+            # Find JSON in response
             start_idx = response.find("{")
             end_idx = response.rfind("}") + 1
             if start_idx == -1 or end_idx == 0:
@@ -102,13 +102,13 @@ Please format your response as JSON with the following structure:
             json_str = response[start_idx:end_idx]
             analysis = json.loads(json_str)
             
-            # Đảm bảo các trường bắt buộc
+            # Ensure required fields
             required_fields = ["rca", "confidence", "recommendations"]
             for field in required_fields:
                 if field not in analysis:
                     raise ValueError(f"Missing required field: {field}")
                     
-            # Thêm timestamp nếu chưa có
+            # Add timestamp if not present
             if "metadata" not in analysis:
                 analysis["metadata"] = {}
             if "analysis_timestamp" not in analysis["metadata"]:
@@ -117,7 +117,7 @@ Please format your response as JSON with the following structure:
             return analysis
             
         except Exception as e:
-            # Fallback nếu không parse được JSON
+            # Fallback if JSON cannot be parsed
             return {
                 "rca": response,
                 "confidence": 0.5,

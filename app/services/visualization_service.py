@@ -15,7 +15,7 @@ class VisualizationService:
         }
 
     def create_event_timeline(self, events: List[Dict[str, Any]]) -> str:
-        """Tạo biểu đồ timeline cho các sự kiện"""
+        """Create timeline chart for events"""
         df = pd.DataFrame(events)
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         
@@ -45,7 +45,7 @@ class VisualizationService:
         return fig.to_json()
 
     def create_severity_distribution(self, events: List[Dict[str, Any]]) -> str:
-        """Tạo biểu đồ phân phối mức độ nghiêm trọng"""
+        """Create severity distribution chart"""
         df = pd.DataFrame(events)
         severity_counts = df['severity'].value_counts()
         
@@ -65,12 +65,12 @@ class VisualizationService:
         return fig.to_json()
 
     def create_trend_analysis(self, events: List[Dict[str, Any]], window: str = '1d') -> str:
-        """Tạo biểu đồ phân tích xu hướng"""
+        """Create trend analysis chart"""
         df = pd.DataFrame(events)
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         df.set_index('timestamp', inplace=True)
         
-        # Resample theo window
+        # Resample by window
         trend = df.resample(window).size()
         
         fig = go.Figure()
@@ -91,7 +91,7 @@ class VisualizationService:
         return fig.to_json()
 
     def create_host_analysis(self, events: List[Dict[str, Any]]) -> str:
-        """Tạo biểu đồ phân tích theo host"""
+        """Create host analysis chart"""
         df = pd.DataFrame(events)
         host_counts = df['host'].value_counts()
         
@@ -112,7 +112,7 @@ class VisualizationService:
         return fig.to_json()
 
     def create_analysis_report(self, events: List[Dict[str, Any]], analyses: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Tạo báo cáo phân tích tổng hợp"""
+        """Create aggregate analysis report"""
         return {
             'timeline': self.create_event_timeline(events),
             'severity_distribution': self.create_severity_distribution(events),

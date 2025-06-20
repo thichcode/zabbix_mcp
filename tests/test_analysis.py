@@ -21,7 +21,7 @@ def analysis_service():
 
 @pytest.mark.asyncio
 async def test_analyze_event(analysis_service, sample_event):
-    """Test phân tích sự kiện"""
+    """Test event analysis"""
     with patch('app.services.analysis.EventAnalysisService._create_analysis_prompt') as mock_prompt:
         mock_prompt.return_value = "Test prompt"
         
@@ -43,7 +43,7 @@ async def test_analyze_event(analysis_service, sample_event):
 
 @pytest.mark.asyncio
 async def test_analyze_event_with_cache(analysis_service, sample_event):
-    """Test phân tích sự kiện với cache"""
+    """Test event analysis with cache"""
     with patch('app.services.cache_service.CacheService.get_cached_analysis') as mock_cache:
         mock_cache.return_value = {
             "root_cause": "Cached root cause",
@@ -62,7 +62,7 @@ async def test_analyze_event_with_cache(analysis_service, sample_event):
 
 @pytest.mark.asyncio
 async def test_analyze_event_error(analysis_service, sample_event):
-    """Test xử lý lỗi khi phân tích sự kiện"""
+    """Test error handling during event analysis"""
     with patch('app.services.analysis.EventAnalysisService._create_analysis_prompt') as mock_prompt:
         mock_prompt.side_effect = Exception("Test error")
         
@@ -73,7 +73,7 @@ async def test_analyze_event_error(analysis_service, sample_event):
 
 @pytest.mark.asyncio
 async def test_create_analysis_prompt(analysis_service, sample_event):
-    """Test tạo prompt phân tích"""
+    """Test analysis prompt creation"""
     prompt = await analysis_service._create_analysis_prompt(sample_event, [])
     
     assert isinstance(prompt, str)
@@ -84,7 +84,7 @@ async def test_create_analysis_prompt(analysis_service, sample_event):
 
 @pytest.mark.asyncio
 async def test_parse_analysis_response(analysis_service):
-    """Test parse kết quả phân tích"""
+    """Test parsing analysis result"""
     response = {
         "root_cause": "Test root cause",
         "confidence": 0.9,
