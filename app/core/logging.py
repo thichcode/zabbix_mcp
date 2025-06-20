@@ -5,26 +5,26 @@ from logging.handlers import RotatingFileHandler
 import os
 from datetime import datetime
 
-# Tạo thư mục logs nếu chưa tồn tại
+# Create logs directory if it doesn't exist
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
 
-# Cấu hình logging
+# Configure logging
 def setup_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
 
-    # Format cho log
+    # Log format
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
 
-    # Handler cho console
+    # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    # Handler cho file
+    # File handler
     log_file = log_dir / f"{name}_{datetime.now().strftime('%Y%m%d')}.log"
     file_handler = RotatingFileHandler(
         log_file,
@@ -36,7 +36,7 @@ def setup_logger(name: str) -> logging.Logger:
 
     return logger
 
-# Tạo các logger cho từng module
+# Create loggers for each module
 api_logger = setup_logger("api")
 analysis_logger = setup_logger("analysis")
 database_logger = setup_logger("database")

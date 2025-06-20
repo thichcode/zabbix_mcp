@@ -17,7 +17,7 @@ class AuthService:
         self._load_api_keys()
 
     def _load_api_keys(self):
-        """Load API keys từ biến môi trường"""
+        """Load API keys from environment variables"""
         api_key = os.getenv("API_KEY")
         if api_key:
             self.api_keys[api_key] = {
@@ -26,7 +26,7 @@ class AuthService:
             }
 
     async def validate_api_key(self, api_key: str = Security(api_key_header)) -> bool:
-        """Xác thực API key"""
+        """Validate API key"""
         if api_key not in self.api_keys:
             raise HTTPException(
                 status_code=403,
@@ -35,7 +35,7 @@ class AuthService:
         return True
 
     def generate_api_key(self, name: str) -> str:
-        """Tạo API key mới"""
+        """Generate new API key"""
         timestamp = str(time.time())
         api_key = hashlib.sha256(f"{name}:{timestamp}".encode()).hexdigest()
         self.api_keys[api_key] = {
@@ -45,12 +45,12 @@ class AuthService:
         return api_key
 
     def revoke_api_key(self, api_key: str) -> bool:
-        """Thu hồi API key"""
+        """Revoke API key"""
         if api_key in self.api_keys:
             del self.api_keys[api_key]
             return True
         return False
 
     def get_api_key_info(self, api_key: str) -> Optional[dict]:
-        """Lấy thông tin API key"""
+        """Get API key information"""
         return self.api_keys.get(api_key) 

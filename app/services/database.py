@@ -25,7 +25,7 @@ class DatabaseService:
         return await self.analysis_collection.find_one({"event_id": event_id})
 
     async def find_similar_events(self, event: Dict[str, Any], limit: int = 5) -> List[Dict[str, Any]]:
-        # Tìm các sự kiện tương tự dựa trên host và trigger
+        # Find similar events based on host and trigger
         query = {
             "host": event["host"],
             "trigger": event["trigger"],
@@ -40,14 +40,14 @@ class DatabaseService:
         return await cursor.to_list(length=limit)
 
     async def get_events_by_host(self, host: str, limit: int = 100) -> List[Dict[str, Any]]:
-        """Lấy các sự kiện của một host cụ thể"""
+        """Get events for a specific host"""
         cursor = self.events_collection.find({"host": host}).sort("timestamp", -1).limit(limit)
         return await cursor.to_list(length=limit)
 
     async def get_events_by_host_and_trigger(self, host: str, trigger: str, 
                                            start_time: datetime = None, 
                                            end_time: datetime = None) -> List[Dict[str, Any]]:
-        """Lấy các sự kiện của một host và trigger trong khoảng thời gian"""
+        """Get events for a host and trigger within a time range"""
         query = {
             "host": host,
             "trigger": trigger
@@ -63,15 +63,15 @@ class DatabaseService:
         return await cursor.to_list(length=None)
 
     async def find_similar_triggers(self, trigger: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Tìm các trigger tương tự"""
-        # Tìm các trigger có pattern tương tự
+        """Find similar triggers"""
+        # Find triggers with similar patterns
         cursor = self.events_collection.find({
             "trigger": {"$regex": trigger, "$options": "i"}
         }).sort("timestamp", -1).limit(limit)
         return await cursor.to_list(length=limit)
 
     async def get_events_by_time_range(self, start_time: datetime, end_time: datetime) -> List[Dict[str, Any]]:
-        """Lấy các sự kiện trong khoảng thời gian"""
+        """Get events within a time range"""
         cursor = self.events_collection.find({
             "timestamp": {
                 "$gte": start_time,
@@ -81,29 +81,29 @@ class DatabaseService:
         return await cursor.to_list(length=None)
 
     async def get_events_by_severity(self, severity: int, limit: int = 100) -> List[Dict[str, Any]]:
-        """Lấy các sự kiện theo mức độ nghiêm trọng"""
+        """Get events by severity"""
         cursor = self.events_collection.find({"severity": severity}).sort("timestamp", -1).limit(limit)
         return await cursor.to_list(length=limit)
 
     async def get_events_by_status(self, status: str, limit: int = 100) -> List[Dict[str, Any]]:
-        """Lấy các sự kiện theo trạng thái"""
+        """Get events by status"""
         cursor = self.events_collection.find({"status": status}).sort("timestamp", -1).limit(limit)
         return await cursor.to_list(length=limit)
 
     async def get_events_by_tag(self, tag_key: str, tag_value: str, limit: int = 100) -> List[Dict[str, Any]]:
-        """Lấy các sự kiện theo tag"""
+        """Get events by tag"""
         cursor = self.events_collection.find({
             "tags": {"$elemMatch": {"key": tag_key, "value": tag_value}}
         }).sort("timestamp", -1).limit(limit)
         return await cursor.to_list(length=limit)
 
     async def get_events_statistics(self) -> Dict[str, Any]:
-        """Lấy thống kê về các sự kiện"""
+        """Get event statistics"""
         total_events = await self.events_collection.count_documents({})
         problem_events = await self.events_collection.count_documents({"status": "PROBLEM"})
         ok_events = await self.events_collection.count_documents({"status": "OK"})
         
-        # Tính toán thống kê theo severity
+        # Calculate statistics by severity
         severity_stats = {}
         for severity in range(1, 6):
             count = await self.events_collection.count_documents({"severity": severity})
@@ -117,5 +117,5 @@ class DatabaseService:
         }
 
     async def close(self):
-        """Đóng kết nối database"""
+        """Close database connection"""
         self.client.close() 

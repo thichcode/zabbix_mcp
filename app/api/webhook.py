@@ -13,7 +13,7 @@ api_key_header = APIKeyHeader(name="X-API-Key")
 cache = CacheService()
 
 async def verify_api_key(api_key: str = Depends(api_key_header)) -> bool:
-    """Xác thực API key"""
+    """Verify API key"""
     expected_key = os.getenv("ZABBIX_WEBHOOK_API_KEY")
     if not expected_key:
         api_logger.warning("ZABBIX_WEBHOOK_API_KEY not set in environment")
@@ -21,25 +21,25 @@ async def verify_api_key(api_key: str = Depends(api_key_header)) -> bool:
     return api_key == expected_key
 
 async def check_rate_limit(request: Request) -> None:
-    """Kiểm tra rate limit"""
+    """Check rate limit"""
     client_ip = request.client.host
     current_time = time.time()
     
-    # Lấy số request trong 1 phút gần nhất
+    # Get the number of requests in the last 1 minute
     key = f"rate_limit:{client_ip}"
     requests = await cache.get(key) or []
     
-    # Lọc các request trong 1 phút gần nhất
+    # Filter requests in the last 1 minute
     requests = [req_time for req_time in requests if current_time - req_time < 60]
     
-    # Kiểm tra số lượng request
-    if len(requests) >= 60:  # Giới hạn 60 request/phút
+    # Check the number of requests
+    if len(requests) >= 60:  # Limit 60 requests/minute
         raise HTTPException(
             status_code=429,
             detail="Too many requests. Please try again later."
         )
     
-    # Thêm request mới
+    # Add new request
     requests.append(current_time)
     await cache.set(key, requests, expire=60)
 
@@ -60,24 +60,24 @@ async def zabbix_webhook(
     analysis_service: EventAnalysisService = Depends(get_analysis_service)
 ) -> Dict[str, Any]:
     try:
-        # Kiểm tra xác thực
+        # Check authentication
         if not await verify_api_key():
             raise HTTPException(
                 status_code=401,
                 detail="Invalid API key"
             )
         
-        # Kiểm tra rate limit
+        # Check rate limit
         await check_rate_limit(request)
         
         # Log request
         api_logger.info(f"Received webhook from {request.client.host}")
         api_logger.debug(f"Webhook payload: {payload.dict()}")
         
-        # Phân tích sự kiện
+        # Analyze event
         analysis = await analysis_service.analyze_event(payload.event)
         
-        # Log kết quả phân tích
+        # Log analysis result
         api_logger.info(f"Analysis completed for event {payload.event.event_id}")
         api_logger.debug(f"Analysis result: {analysis.dict()}")
         

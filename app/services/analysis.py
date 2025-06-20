@@ -29,32 +29,32 @@ class EventAnalysisService:
             openai.api_key = openai_api_key
 
     async def analyze_event(self, event: ZabbixEvent) -> EventAnalysis:
-        # Lưu sự kiện vào database
+        # Save event to database
         event_dict = event.dict()
         await self.db.save_event(event_dict)
         
-        # Lấy context liên quan từ RAG
+        # Get relevant context from RAG
         context = await self.rag.get_relevant_context(event_dict)
         context_text = self.rag.format_context_for_prompt(context)
         
-        # Thực hiện phân tích sâu
+        # Perform deep analysis
         deep_research_results = await self.deep_research.research_event(event_dict, context)
         
-        # Phân tích xu hướng
+        # Analyze trends
         trend_results = await self.trend_analysis.analyze_trends(
             host=event.host,
             trigger=event.trigger,
-            time_range=24  # Phân tích 24 giờ gần nhất
+            time_range=24  # Analyze last 24 hours
         )
         
-        # Phân tích tác động
+        # Analyze impact
         impact_results = await self.impact_analysis.analyze_impact(event)
         
-        # Phân tích sự kiện
+        # Analyze event
         if self.use_ollama:
             analysis = await self.ollama.analyze_event(event_dict, context)
         else:
-            # Tạo prompt cho OpenAI với context từ RAG và kết quả phân tích sâu
+            # Create prompt for OpenAI with context from RAG and deep analysis results
             prompt = self._create_analysis_prompt(
                 event, 
                 context_text, 
@@ -63,7 +63,7 @@ class EventAnalysisService:
                 impact_results
             )
             
-            # Gọi OpenAI API
+            # Call OpenAI API
             response = await openai.ChatCompletion.acreate(
                 model=self.model,
                 messages=[
@@ -72,10 +72,10 @@ class EventAnalysisService:
                 ]
             )
             
-            # Phân tích kết quả
+            # Parse analysis result
             analysis = self._parse_analysis_response(response.choices[0].message.content)
         
-        # Tạo đối tượng EventAnalysis
+        # Create EventAnalysis object
         event_analysis = EventAnalysis(
             event_id=event.event_id,
             rca=analysis["rca"],
@@ -93,7 +93,7 @@ class EventAnalysisService:
             resolution_time=impact_results["temporal_impact"]["recovery_estimate"]["estimated_minutes"]
         )
         
-        # Lưu kết quả phân tích vào database
+        # Save analysis result to database
         await self.db.save_analysis(event_analysis.dict())
         
         return event_analysis
@@ -101,23 +101,23 @@ class EventAnalysisService:
     def _create_analysis_prompt(self, event: ZabbixEvent, context_text: str, 
                               deep_research: Dict[str, Any], trend_results: Dict[str, Any],
                               impact_results: Dict[str, Any]) -> str:
-        # Định dạng kết quả phân tích sâu
+        # Format deep analysis results
         deep_research_text = "\nDeep Research Results:\n"
         
-        # Thêm thông tin về mẫu sự kiện
+        # Add information about event patterns
         if deep_research["event_patterns"]["recurring_issues"]:
             deep_research_text += "\nRecurring Issues:\n"
             for issue in deep_research["event_patterns"]["recurring_issues"]:
                 deep_research_text += f"- {issue['pattern']}: {issue['count']} occurrences\n"
         
-        # Thêm thông tin về sức khỏe hệ thống
+        # Add information about system health
         health = deep_research["system_health"]
         deep_research_text += f"\nSystem Health:\n"
         deep_research_text += f"- Stability: {health['system_stability']:.2f}\n"
         if health["recovery_time"]:
             deep_research_text += f"- Average Recovery Time: {health['recovery_time']}\n"
         
-        # Thêm thông tin về chuỗi phụ thuộc
+        # Add information about dependency chain
         deps = deep_research["dependency_chain"]
         if deps["upstream_events"] or deps["downstream_events"]:
             deep_research_text += "\nDependencies:\n"
@@ -126,14 +126,14 @@ class EventAnalysisService:
             if deps["downstream_events"]:
                 deep_research_text += f"- Downstream Events: {len(deps['downstream_events'])}\n"
         
-        # Thêm các khuyến nghị
+        # Add recommendations
         if deep_research["recommendations"]:
             deep_research_text += "\nRecommendations:\n"
             for rec in deep_research["recommendations"]:
                 deep_research_text += f"- [{rec['priority']}] {rec['description']}\n"
                 deep_research_text += f"  Action: {rec['action']}\n"
 
-        # Định dạng kết quả phân tích xu hướng
+        # Format trend analysis results
         trend_text = "\nTrend Analysis:\n"
         if trend_results["has_trend"]:
             trend_text += f"- Frequency: {trend_results['frequency_analysis']['trend']}\n"
@@ -141,7 +141,7 @@ class EventAnalysisService:
             if trend_results['recovery_analysis']['has_recovery_data']:
                 trend_text += f"- Average Recovery Time: {trend_results['recovery_analysis']['average_recovery_time']:.2f} minutes\n"
 
-        # Định dạng kết quả phân tích tác động
+        # Format impact analysis results
         impact_text = "\nImpact Analysis:\n"
         impact_text += f"- Direct Impact: {impact_results['direct_impact']['impact_type']}\n"
         impact_text += f"- Affected Services: {len(impact_results['indirect_impact']['affected_services'])}\n"
