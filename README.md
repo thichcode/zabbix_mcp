@@ -1,48 +1,62 @@
+Chắc chắn rồi, đây là bản dịch của tệp `README.md` từ tiếng Việt sang tiếng Anh.
+
+-----
+
 # Zabbix MCP Server
 
-MCP (Monitoring Control Panel) Server là một hệ thống phân tích thông minh cho Zabbix, giúp tự động phân tích và xử lý các trigger từ Zabbix.
+MCP (Monitoring Control Panel) Server is an intelligent analysis system for Zabbix that automatically analyzes and processes triggers from Zabbix.
 
-## Tính năng chính
+## Main Features
 
-### 1. Phân tích Trigger
-- Phân tích nguyên nhân gốc rễ (RCA)
-- Phân tích xu hướng và mẫu
-- Phân tích tác động và ảnh hưởng
-- Đề xuất giải pháp tự động
+### 1\. Trigger Analysis
 
-### 2. Phân tích Xu hướng
-- Phân tích tần suất xuất hiện của trigger
-- Phân tích mức độ nghiêm trọng theo thời gian
-- Phân tích thời gian phục hồi
-- Dự đoán xu hướng trong tương lai
+  * Root Cause Analysis (RCA)
+  * Trend and pattern analysis
+  * Impact and influence analysis
+  * Automatic solution recommendations
 
-### 3. Phân tích Tác động
-- Phân tích tác động trực tiếp
-- Phân tích tác động gián tiếp
-- Phân tích tác động theo thời gian
-- Ước tính chi phí kinh doanh
+### 2\. Trend Analysis
 
-### 4. Bảo mật
-- Xác thực API key
-- Rate limiting (60 request/phút)
-- Logging chi tiết
-- Kiểm tra sức khỏe hệ thống
+  * Analysis of trigger occurrence frequency
+  * Analysis of severity levels over time
+  * Analysis of recovery time
+  * Prediction of future trends
 
-## Cài đặt
+### 3\. Impact Analysis
 
-### Yêu cầu
-- Python 3.8+
-- MongoDB 4.4+
-- Redis 6.0+
-- Zabbix 5.0+
+  * Direct impact analysis
+  * Indirect impact analysis
+  * Impact analysis over time
+  * Business cost estimation
 
-### Cài đặt dependencies
+### 4\. Security
+
+  * API key authentication
+  * Rate limiting (60 requests/minute)
+  * Detailed logging
+  * System health check
+
+## Installation
+
+### Requirements
+
+  * Python 3.8+
+  * MongoDB 4.4+
+  * Redis 6.0+
+  * Zabbix 5.0+
+
+### Install dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### Cấu hình
-1. Tạo file `.env` với các biến môi trường:
+### Configuration
+
+1.  Create a `.env` file with the following environment variables:
+
+<!-- end list -->
+
 ```env
 MONGODB_URI=mongodb://localhost:27017
 MONGODB_DB=zabbix_mcp
@@ -58,12 +72,16 @@ OLLAMA_API_URL=http://localhost:11434
 OLLAMA_MODEL=llama2
 ```
 
-2. Cấu hình Zabbix webhook:
+2.  Configure Zabbix webhook:
+
+<!-- end list -->
+
 ```bash
 python scripts/setup_zabbix.py
 ```
 
-### Chạy với Docker
+### Run with Docker
+
 ```bash
 docker-compose up -d
 ```
@@ -71,15 +89,19 @@ docker-compose up -d
 ## API Endpoints
 
 ### Webhook
+
 ```
 POST /api/v1/webhook/zabbix
 ```
-Nhận trigger từ Zabbix và phân tích.
+
+Receives and analyzes triggers from Zabbix.
 
 Headers:
-- `X-API-Key`: API key để xác thực
+
+  * `X-API-Key`: API key for authentication
 
 Body:
+
 ```json
 {
     "event": {
@@ -99,12 +121,14 @@ Body:
 ```
 
 ### Health Check
+
 ```
 GET /api/v1/health
 ```
-Kiểm tra trạng thái của các service.
 
-## Cấu trúc dự án
+Checks the status of the services.
+
+## Project Structure
 
 ```
 zabbixmcp/
@@ -134,60 +158,66 @@ zabbixmcp/
 └── README.md
 ```
 
-## Phân tích
+## Analysis
 
-### Phân tích Xu hướng
-- Tần suất xuất hiện của trigger
-- Mức độ nghiêm trọng theo thời gian
-- Thời gian phục hồi trung bình
-- Dự đoán xu hướng
+### Trend Analysis
 
-### Phân tích Tác động
-- Tác động trực tiếp
-  - Mức độ nghiêm trọng
-  - Host bị ảnh hưởng
-  - Item bị ảnh hưởng
-  - Hành động cần thiết
-- Tác động gián tiếp
-  - Service bị ảnh hưởng
-  - User bị ảnh hưởng
-  - Hiệu ứng dây chuyền
-  - Tác động kinh doanh
-- Tác động theo thời gian
-  - Thời điểm xảy ra
-  - Thời gian phục hồi
-  - Mẫu lịch sử
+  * Frequency of trigger occurrences
+  * Severity level over time
+  * Average recovery time
+  * Trend prediction
 
-## Bảo mật
+### Impact Analysis
 
-### Xác thực
-- API key bắt buộc cho webhook
-- Kiểm tra IP nguồn
-- Rate limiting
+  * Direct impact
+      * Severity level
+      * Affected host
+      * Affected item
+      * Required actions
+  * Indirect impact
+      * Affected services
+      * Affected users
+      * Chain effect
+      * Business impact
+  * Impact over time
+      * Time of occurrence
+      * Recovery time
+      * Historical patterns
+
+## Security
+
+### Authentication
+
+  * API key required for webhook
+  * Source IP check
+  * Rate limiting
 
 ### Logging
-- Log tất cả request
-- Log kết quả phân tích
-- Log lỗi và cảnh báo
+
+  * Log all requests
+  * Log analysis results
+  * Log errors and warnings
 
 ## Monitoring
 
 ### Health Check
-- Kiểm tra MongoDB
-- Kiểm tra Redis
-- Kiểm tra Zabbix API
-- Kiểm tra AI service
+
+  * Check MongoDB
+  * Check Redis
+  * Check Zabbix API
+  * Check AI service
 
 ### Metrics
-- Số lượng trigger
-- Thời gian phân tích
-- Độ chính xác của phân tích
-- Tỷ lệ phục hồi
+
+  * Number of triggers
+  * Analysis time
+  * Analysis accuracy
+  * Recovery rate
 
 ## Contributing
 
-Xem [CONTRIBUTING.md](CONTRIBUTING.md) để biết thêm chi tiết.
+See [CONTRIBUTING.md](https://www.google.com/search?q=CONTRIBUTING.md) for more details.
 
 ## License
 
-MIT License 
+MIT License
