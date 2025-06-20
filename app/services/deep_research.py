@@ -10,7 +10,7 @@ class DeepResearchService:
 
     async def research_event(self, event: Dict[str, Any], context: List[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Thực hiện nghiên cứu sâu về sự kiện
+        Perform deep research on the event
         """
         research_results = {
             "event_patterns": await self._analyze_event_patterns(event, context),
@@ -24,7 +24,7 @@ class DeepResearchService:
 
     async def _analyze_event_patterns(self, event: Dict[str, Any], context: List[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Phân tích các mẫu sự kiện
+        Analyze event patterns
         """
         patterns = {
             "recurring_issues": [],
@@ -34,7 +34,7 @@ class DeepResearchService:
         }
         
         if context:
-            # Phân tích sự kiện lặp lại
+            # Analyze recurring events
             event_counts = {}
             for item in context:
                 if item["type"] == "event":
@@ -42,14 +42,14 @@ class DeepResearchService:
                     key = f"{event_data['host']}_{event_data['trigger']}"
                     event_counts[key] = event_counts.get(key, 0) + 1
                     
-                    # Kiểm tra mẫu thời gian
+                    # Check time patterns
                     if "timestamp" in event_data:
                         event_time = event_data["timestamp"]
                         if isinstance(event_time, str):
                             event_time = datetime.fromisoformat(event_time)
                         patterns["time_patterns"].append(event_time)
             
-            # Xác định sự kiện lặp lại
+            # Identify recurring events
             for key, count in event_counts.items():
                 if count > 1:
                     patterns["recurring_issues"].append({
@@ -57,7 +57,7 @@ class DeepResearchService:
                         "count": count
                     })
             
-            # Phân tích mẫu severity
+            # Analyze severity patterns
             severity_counts = {}
             for item in context:
                 if item["type"] == "event":
@@ -73,9 +73,9 @@ class DeepResearchService:
 
     async def _analyze_system_health(self, event: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Phân tích sức khỏe hệ thống
+        Analyze system health
         """
-        # Lấy các sự kiện gần đây của host
+        # Get recent events for the host
         recent_events = await self.db.get_events_by_host(event["host"], limit=10)
         
         health_metrics = {
@@ -85,7 +85,7 @@ class DeepResearchService:
             "system_stability": 0.0
         }
         
-        # Phân tích thời gian phục hồi
+        # Analyze recovery time
         if recent_events:
             recovery_times = []
             for i in range(len(recent_events) - 1):
@@ -96,7 +96,7 @@ class DeepResearchService:
             if recovery_times:
                 health_metrics["recovery_time"] = sum(recovery_times, timedelta()) / len(recovery_times)
         
-        # Tính toán độ ổn định hệ thống
+        # Calculate system stability
         total_events = len(recent_events)
         if total_events > 0:
             problem_events = sum(1 for e in recent_events if e["status"] == "PROBLEM")
@@ -106,7 +106,7 @@ class DeepResearchService:
 
     async def _analyze_dependency_chain(self, event: Dict[str, Any], context: List[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Phân tích chuỗi phụ thuộc
+        Analyze dependency chain
         """
         dependencies = {
             "upstream_events": [],
@@ -116,7 +116,7 @@ class DeepResearchService:
         }
         
         if context:
-            # Tìm các sự kiện liên quan theo thời gian
+            # Find related events by time
             event_time = event.get("timestamp")
             if event_time:
                 if isinstance(event_time, str):
@@ -130,7 +130,7 @@ class DeepResearchService:
                             if isinstance(other_time, str):
                                 other_time = datetime.fromisoformat(other_time)
                             
-                            # Xác định sự kiện upstream/downstream
+                            # Identify upstream/downstream events
                             if other_time < event_time:
                                 dependencies["upstream_events"].append(event_data)
                             elif other_time > event_time:
@@ -140,7 +140,7 @@ class DeepResearchService:
 
     async def _analyze_trends(self, event: Dict[str, Any], context: List[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Phân tích xu hướng
+        Analyze trends
         """
         trends = {
             "frequency_trend": [],
@@ -150,14 +150,14 @@ class DeepResearchService:
         }
         
         if context:
-            # Sắp xếp sự kiện theo thời gian
+            # Sort events by time
             events = [
                 item["data"] for item in context 
                 if item["type"] == "event" and "timestamp" in item["data"]
             ]
             events.sort(key=lambda x: x["timestamp"])
             
-            # Phân tích xu hướng tần suất
+            # Analyze frequency trend
             time_windows = []
             current_window = []
             window_size = timedelta(hours=24)
@@ -182,38 +182,38 @@ class DeepResearchService:
 
     async def _generate_recommendations(self, event: Dict[str, Any], context: List[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
-        Tạo các khuyến nghị dựa trên phân tích sâu
+        Generate recommendations based on deep analysis
         """
         recommendations = []
         
-        # Phân tích mẫu sự kiện
+        # Analyze event patterns
         patterns = await self._analyze_event_patterns(event, context)
         if patterns["recurring_issues"]:
             recommendations.append({
                 "type": "pattern_based",
                 "priority": "high",
-                "description": f"Phát hiện {len(patterns['recurring_issues'])} vấn đề lặp lại",
-                "action": "Xem xét cấu hình lại hệ thống để tránh lặp lại"
+                "description": f"# Found {len(patterns['recurring_issues'])} recurring issues",
+                "action": "# Consider reconfiguring the system to avoid recurrence"
             })
         
-        # Phân tích sức khỏe hệ thống
+        # Analyze system health
         health = await self._analyze_system_health(event)
         if health["system_stability"] < 0.7:
             recommendations.append({
                 "type": "system_health",
                 "priority": "high",
-                "description": "Độ ổn định hệ thống thấp",
-                "action": "Kiểm tra và tối ưu hóa cấu hình hệ thống"
+                "description": "# Low system stability",
+                "action": "# Check and optimize system configuration"
             })
         
-        # Phân tích chuỗi phụ thuộc
+        # Analyze dependency chain
         dependencies = await self._analyze_dependency_chain(event, context)
         if dependencies["upstream_events"]:
             recommendations.append({
                 "type": "dependency",
                 "priority": "medium",
-                "description": f"Phát hiện {len(dependencies['upstream_events'])} sự kiện upstream",
-                "action": "Kiểm tra các dịch vụ phụ thuộc"
+                "description": f"# Found {len(dependencies['upstream_events'])} upstream events",
+                "action": "# Check dependent services"
             })
         
         return recommendations 

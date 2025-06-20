@@ -6,17 +6,17 @@ import uvicorn
 import os
 from dotenv import load_dotenv
 
-# Load biến môi trường
+# Load environment variables
 load_dotenv()
 
-# Khởi tạo FastAPI app
+# Initialize FastAPI app
 app = FastAPI(
     title="Zabbix MCP Server",
     description="Middleware service for Zabbix event analysis using AI",
     version="1.0.0"
 )
 
-# Cấu hình CORS
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,10 +31,10 @@ app.include_router(health.router, prefix="/api/v1", tags=["health"])
 
 @app.on_event("startup")
 async def startup_event():
-    """Xử lý sự kiện khi server khởi động"""
+    """Handle server startup event"""
     api_logger.info("Server starting up...")
     try:
-        # Kiểm tra kết nối các service
+        # Check service connections
         from .api.health import health_check
         health_status = await health_check()
         if health_status["status"] == "unhealthy":
@@ -48,7 +48,7 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Xử lý sự kiện khi server tắt"""
+    """Handle server shutdown event"""
     api_logger.info("Server shutting down...")
 
 @app.get("/")
@@ -61,12 +61,12 @@ async def root():
     }
 
 if __name__ == "__main__":
-    # Lấy cấu hình từ biến môi trường
+    # Get configuration from environment variables
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", 8000))
     debug = os.getenv("DEBUG", "false").lower() == "true"
     
-    # Khởi động server
+    # Start server
     uvicorn.run(
         "app.main:app",
         host=host,

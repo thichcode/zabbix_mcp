@@ -13,21 +13,21 @@ cache = CacheService()
 
 @router.get("/health")
 async def health_check() -> Dict[str, Any]:
-    """Kiểm tra trạng thái tổng thể của hệ thống"""
+    """Check the overall health of the system"""
     try:
-        # Kiểm tra MongoDB
+        # Check MongoDB
         mongo_status = await check_mongodb()
         
-        # Kiểm tra Redis
+        # Check Redis
         redis_status = await check_redis()
         
-        # Kiểm tra Zabbix
+        # Check Zabbix
         zabbix_status = await check_zabbix()
         
-        # Kiểm tra Ollama/OpenAI
+        # Check Ollama/OpenAI
         ai_status = await check_ai_service()
         
-        # Tổng hợp kết quả
+        # Aggregate results
         status = {
             "status": "healthy" if all([
                 mongo_status["status"] == "healthy",
@@ -52,7 +52,7 @@ async def health_check() -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 async def check_mongodb() -> Dict[str, Any]:
-    """Kiểm tra kết nối MongoDB"""
+    """Check MongoDB connection"""
     try:
         await db.ping()
         return {
@@ -67,7 +67,7 @@ async def check_mongodb() -> Dict[str, Any]:
         }
 
 async def check_redis() -> Dict[str, Any]:
-    """Kiểm tra kết nối Redis"""
+    """Check Redis connection"""
     try:
         await cache.redis_client.ping()
         return {
@@ -82,7 +82,7 @@ async def check_redis() -> Dict[str, Any]:
         }
 
 async def check_zabbix() -> Dict[str, Any]:
-    """Kiểm tra kết nối Zabbix API"""
+    """Check Zabbix API connection"""
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(os.getenv("ZABBIX_API_URL")) as response:
@@ -104,10 +104,10 @@ async def check_zabbix() -> Dict[str, Any]:
         }
 
 async def check_ai_service() -> Dict[str, Any]:
-    """Kiểm tra kết nối AI service (Ollama/OpenAI)"""
+    """Check AI service (Ollama/OpenAI) connection"""
     try:
         if os.getenv("USE_OLLAMA") == "true":
-            # Kiểm tra Ollama
+            # Check Ollama
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"{os.getenv('OLLAMA_API_URL')}/api/tags") as response:
                     if response.status == 200:
@@ -121,7 +121,7 @@ async def check_ai_service() -> Dict[str, Any]:
                             "message": f"Ollama API returned status {response.status}"
                         }
         else:
-            # Kiểm tra OpenAI
+            # Check OpenAI
             from openai import OpenAI
             client = OpenAI()
             client.models.list()

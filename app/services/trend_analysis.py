@@ -10,10 +10,10 @@ class TrendAnalysisService:
 
     async def analyze_trends(self, host: str, trigger: str, time_range: int = 24) -> Dict[str, Any]:
         """
-        Phân tích xu hướng của trigger trong khoảng thời gian
-        time_range: số giờ để phân tích
+        Analyze trigger trends within a time range
+        time_range: number of hours to analyze
         """
-        # Lấy các sự kiện trong khoảng thời gian
+        # Get events within the time range
         end_time = datetime.utcnow()
         start_time = end_time - timedelta(hours=time_range)
         
@@ -27,21 +27,21 @@ class TrendAnalysisService:
         if not events:
             return {
                 "has_trend": False,
-                "message": "Không đủ dữ liệu để phân tích xu hướng"
+                "message": "# Not enough data to analyze trends"
             }
 
-        # Chuyển đổi thành DataFrame để phân tích
+        # Convert to DataFrame for analysis
         df = pd.DataFrame(events)
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         df.set_index('timestamp', inplace=True)
 
-        # Phân tích tần suất
+        # Analyze frequency
         frequency = self._analyze_frequency(df)
         
-        # Phân tích mức độ nghiêm trọng
+        # Analyze severity
         severity = self._analyze_severity(df)
         
-        # Phân tích thời gian phục hồi
+        # Analyze recovery time
         recovery = self._analyze_recovery_time(df)
 
         return {
@@ -54,8 +54,8 @@ class TrendAnalysisService:
         }
 
     def _analyze_frequency(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Phân tích tần suất xuất hiện của trigger"""
-        # Tính số sự kiện theo giờ
+        """Analyze trigger occurrence frequency"""
+        # Calculate number of events per hour
         hourly_counts = df.resample('H').size()
         
         return {
@@ -67,7 +67,7 @@ class TrendAnalysisService:
         }
 
     def _analyze_severity(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Phân tích mức độ nghiêm trọng"""
+        """Analyze severity"""
         severity_counts = df['severity'].value_counts()
         
         return {
@@ -78,24 +78,24 @@ class TrendAnalysisService:
         }
 
     def _analyze_recovery_time(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Phân tích thời gian phục hồi"""
+        """Analyze recovery time"""
         recovery_times = []
         
-        # Tìm các cặp PROBLEM -> OK
+        # Find PROBLEM -> OK pairs
         problem_events = df[df['status'] == 'PROBLEM']
         ok_events = df[df['status'] == 'OK']
         
         for idx, problem in problem_events.iterrows():
-            # Tìm sự kiện OK tiếp theo
+            # Find the next OK event
             next_ok = ok_events[ok_events.index > idx]
             if not next_ok.empty:
-                recovery_time = (next_ok.index[0] - idx).total_seconds() / 60  # Chuyển sang phút
+                recovery_time = (next_ok.index[0] - idx).total_seconds() / 60  # Convert to minutes
                 recovery_times.append(recovery_time)
 
         if not recovery_times:
             return {
                 "has_recovery_data": False,
-                "message": "Không có dữ liệu về thời gian phục hồi"
+                "message": "# No data on recovery time"
             }
 
         return {
