@@ -1,5 +1,3 @@
-Chắc chắn rồi, đây là bản dịch của tệp `README.md` từ tiếng Việt sang tiếng Anh.
-
 -----
 
 # Zabbix MCP Server
